@@ -1,0 +1,56 @@
+# Güvenli Pod - Tam SecurityContext örneği
+# En iyi pratiklerle yazılmış güvenli pod tanımı.
+# readOnlyRootFilesystem, seccompProfile, capabilities drop ALL.
+#
+# Çalıştır:
+#   oc apply -f 02-pod-with-securitycontext.yaml -n security-demo
+#
+# Kontrol:
+#   oc get pod secure-pod -n security-demo
+#   oc get pod secure-pod -o jsonpath='{.metadata.annotations.openshift\.io/scc}' -n security-demo
+# ---------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-pod
+  namespace: security-demo
+  labels:
+    demo: full-securitycontext
+spec:
+  # Pod seviyesi güvenlik ayarları
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 2000
+    seccompProfile:
+      type: RuntimeDefault          # Varsayılan seccomp profili
+  containers:
+    - name: app
+      image: bitnami/nginx:latest
+      ports:
+        - containerPort: 8080
+      # Container seviyesi güvenlik ayarları
+      securityContext:
+        allowPrivilegeEscalation: false   # setuid/setgid binary çalıştırılamaz
+        readOnlyRootFilesystem: true      # Root filesystem salt okunur
+        capabilities:
+          drop:
+            - ALL                         # Tüm Linux capabilities kaldır
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "100m"
+        limits:
+          memory: "128Mi"
+          cpu: "200m"
+      volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: cache-volume
+          mountPath: /opt/bitnami/nginx/tmp
+  volumes:
+    - name: tmp-volume
+      emptyDir: {}
+    - name: cache-volume
+      emptyDir: {}

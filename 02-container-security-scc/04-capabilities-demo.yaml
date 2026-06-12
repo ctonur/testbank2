@@ -1,0 +1,42 @@
+# Linux Capabilities Demo
+# Uygulama sadece NET_BIND_SERVICE capability'sine ihtiyaç duyuyor.
+# Tüm diğer capabilities drop edildi.
+#
+# Çalıştır:
+#   oc apply -f 04-capabilities-demo.yaml -n security-demo
+#
+# Kontrol:
+#   oc exec -it capabilities-demo -- capsh --print
+#   oc exec -it capabilities-demo -- cat /proc/1/status | grep Cap
+#
+# Capabilities decode için (host'ta):
+#   capsh --decode=0000000000000400
+# ---------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: capabilities-demo
+  namespace: security-demo
+  labels:
+    demo: capabilities
+spec:
+  containers:
+    - name: app
+      image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - NET_BIND_SERVICE       # Sadece port 1024 altına bind olmak için
+          drop:
+            - ALL                    # Önce hepsini kaldır, sonra gerekeni ekle
+      resources:
+        requests:
+          memory: "32Mi"
+          cpu: "50m"
+        limits:
+          memory: "64Mi"
+          cpu: "100m"

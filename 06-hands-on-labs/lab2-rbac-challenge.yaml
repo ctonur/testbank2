@@ -1,0 +1,68 @@
+# =====================================================
+# LAB 2: RBAC Challenge
+# Süre: ~20 dakika
+# =====================================================
+#
+# SENARYO:
+#   CI/CD pipeline'ı çalıştıran 'ci-bot' kullanıcısı:
+#     ✅ 'production' namespace'inde Deployment güncelleyebilmeli
+#     ✅ 'production' namespace'inde Pod listesini görebilmeli
+#     ❌ Pod SİLEMEMELİ
+#     ❌ Secret OKUYAMAMALI
+#     ❌ Başka namespace'lere ERİŞEMEMELİ
+#
+# GÖREVLER:
+#   1. Aşağıdaki Role'deki TODO'ları tamamla
+#   2. oc apply -f lab2-rbac-challenge.yaml ile uygula
+#
+#   3. Doğrulama komutları:
+#      oc auth can-i update deployments --as ci-bot -n production   # yes olmalı
+#      oc auth can-i patch deployments --as ci-bot -n production    # yes olmalı
+#      oc auth can-i get pods --as ci-bot -n production             # yes olmalı
+#      oc auth can-i delete pods --as ci-bot -n production          # no olmalı
+#      oc auth can-i get secrets --as ci-bot -n production          # no olmalı
+#      oc auth can-i get pods --as ci-bot -n default                # no olmalı
+#      oc auth can-i get pods --as ci-bot -n lab1-scc               # no olmalı
+#
+#   4. BONUS: ci-bot için ClusterRoleBinding yerine RoleBinding kullandın mı?
+#             Neden önemli? (Least Privilege)
+#
+# ÇÖZÜM İPUCU:
+#   apiGroups: ["apps"] -> deployments için
+#   apiGroups: [""]     -> pods için (core API group)
+# =====================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-bot-role
+  namespace: production
+rules:
+  # TODO 1: Deployment update/patch yetkisi ekle
+  # Hint: apiGroups: ["apps"], resources: ["deployments"], verbs: [...]
+  - apiGroups: []        # TODO: hangi apiGroup? ("apps" mı "" mi?)
+    resources: []        # TODO: hangi resource? ("deployments"?)
+    verbs: []            # TODO: hangi fiiller? (update? patch? delete?)
+
+  # TODO 2: Pod listeleme yetkisi ekle (sadece get ve list - delete yok!)
+  - apiGroups: []        # TODO: core API group için ne yazılır?
+    resources: []        # TODO: "pods"?
+    verbs: []            # TODO: sadece okuma fiilleri
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-bot-binding
+  namespace: production   # TODO: Bu doğru namespace mi? Neden ClusterRoleBinding değil?
+subjects:
+  - kind: User
+    name: ci-bot           # TODO: Bu kullanıcı adı doğru mu?
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role               # TODO: "Role" mi "ClusterRole" mi? Neden?
+  name: ci-bot-role
+  apiGroup: rbac.authorization.k8s.io

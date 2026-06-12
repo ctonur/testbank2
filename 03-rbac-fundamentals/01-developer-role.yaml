@@ -1,0 +1,40 @@
+# RBAC - Developer Role
+# developer1 kullanıcısı rbac-demo namespace'inde:
+#   - Pod, Service, ConfigMap okuyabilir/oluşturabilir/güncelleyebilir
+#   - Deployment, ReplicaSet yönetebilir
+#   - Pod log ve exec yapabilir
+#   - Secret OKUYAMAZ (güvenlik)
+#
+# Çalıştır:
+#   oc new-project rbac-demo
+#   oc apply -f 01-developer-role.yaml
+# ---------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer-role
+  namespace: rbac-demo
+  labels:
+    demo: rbac
+rules:
+  # Temel workload kaynakları
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # Deployment ve ReplicaSet yönetimi
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # Pod log ve exec (debug için)
+  - apiGroups: [""]
+    resources: ["pods/log", "pods/exec", "pods/portforward"]
+    verbs: ["get", "list", "create"]
+
+  # Events okuma (hata ayıklama)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+  # NOT: secrets burada YOK - developer secret okuyamaz

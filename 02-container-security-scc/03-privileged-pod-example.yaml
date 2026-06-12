@@ -1,0 +1,48 @@
+# !! UYARI: EĞİTİM AMAÇLI - PRODUCTION'DA KULLANMAYIN !!
+# Privileged Pod Örneği
+# Bu pod neden tehlikelidir:
+#   - privileged: true  -> container host kernel'e tam erişim sağlar
+#   - Host filesystem'e mount edebilir
+#   - Host network'ü görebilir
+#   - Host process'leri görebilir
+#
+# Çalıştırmak için önce privileged SCC gerekir:
+#   oc create sa privileged-sa -n security-demo
+#   oc adm policy add-scc-to-user privileged -z privileged-sa -n security-demo
+#   oc apply -f 03-privileged-pod-example.yaml -n security-demo
+#
+# Kontrol:
+#   oc exec -it privileged-demo -- nsenter --target 1 --mount --uts --ipc --net
+# ---------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: privileged-sa
+  namespace: security-demo
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-demo
+  namespace: security-demo
+  labels:
+    demo: privileged
+  annotations:
+    warning: "Bu pod sadece egitim amacli olusturulmustur - production'da KULLANMAYIN"
+spec:
+  serviceAccountName: privileged-sa
+  containers:
+    - name: privileged-container
+      image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+      command: ["sleep", "3600"]
+      securityContext:
+        privileged: true            # TÜM Linux capabilities dahil
+        runAsUser: 0                # Root
+        allowPrivilegeEscalation: true
+      resources:
+        requests:
+          memory: "32Mi"
+          cpu: "50m"
+        limits:
+          memory: "64Mi"
+          cpu: "100m"

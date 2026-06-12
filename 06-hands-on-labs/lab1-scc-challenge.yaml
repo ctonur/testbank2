@@ -1,0 +1,68 @@
+# =====================================================
+# LAB 1: SCC Challenge
+# Süre: ~20 dakika
+# =====================================================
+#
+# SENARYO:
+#   Bir geliştirici aşağıdaki pod YAML'ını yazdı.
+#   Pod çalışmıyor. Sorunu bul ve iki farklı yöntemle düzelt.
+#
+# GÖREVLER:
+#   1. Bu dosyayı uygula ve hatayı incele
+#      oc apply -f lab1-scc-challenge.yaml
+#
+#   2. Neden çalışmıyor? Events'e bak:
+#      oc get events -n lab1-scc --sort-by=.metadata.creationTimestamp
+#
+#   3. YÖNTEM A: SecurityContext'i düzelterek çalıştır
+#      (runAsUser: 0 ve privileged: true kaldır, non-root ekle)
+#
+#   4. YÖNTEM B: Service Account'a anyuid SCC vererek çalıştır
+#      oc adm policy add-scc-to-user anyuid -z lab1-sa -n lab1-scc
+#
+#   5. Kullanılan SCC'yi doğrula:
+#      oc get pod lab1-pod -o jsonpath='{.metadata.annotations.openshift\.io/scc}' -n lab1-scc
+#
+# BEKLENEN SONUÇ:
+#   - Pod "Running" state'inde
+#   - Yöntem A: restricted-v2 SCC kullanıldı
+#   - Yöntem B: anyuid SCC kullanıldı
+# =====================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab1-scc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lab1-sa
+  namespace: lab1-scc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lab1-pod
+  namespace: lab1-scc
+  labels:
+    lab: "1"
+spec:
+  serviceAccountName: lab1-sa
+  containers:
+    - name: webserver
+      image: nginx:1.25
+      ports:
+        - containerPort: 80
+      # SORUN: Aşağıdaki securityContext restricted-v2 ile uyumsuz
+      # restricted-v2: runAsUser 0'a izin vermez, privileged false olmalı
+      securityContext:
+        runAsUser: 0               # <-- SORUN 1: root kullanıcı
+        privileged: true           # <-- SORUN 2: privileged container
+        allowPrivilegeEscalation: true  # <-- SORUN 3: privilege escalation
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "100m"
+        limits:
+          memory: "128Mi"
+          cpu: "200m"

@@ -1,0 +1,40 @@
+# Demo 4 - Root Pod with anyuid SCC (Service Account ile)
+# Bu pod demo-sa service account'u sayesinde root olarak çalışır.
+#
+# Önce şunları yap:
+#   oc apply -f 03-demo-service-account.yaml
+#   oc adm policy add-scc-to-user anyuid -z demo-sa -n security-demo
+#
+# Sonra çalıştır:
+#   oc apply -f 04-root-pod-with-anyuid.yaml -n security-demo
+#
+# Kontrol:
+#   oc get pod root-pod-with-sa -n security-demo
+#   oc get pod root-pod-with-sa -o jsonpath='{.metadata.annotations.openshift\.io/scc}' -n security-demo
+#   Beklenen SCC: anyuid
+#
+# DERS: Tüm namespace'e değil sadece bu SA'ya istisna verdik = Least Privilege
+# ---------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: root-pod-with-sa
+  namespace: security-demo
+  labels:
+    demo: scc-anyuid
+spec:
+  serviceAccountName: demo-sa    # anyuid SCC'ye sahip service account
+  containers:
+    - name: nginx
+      image: nginx:1.25
+      ports:
+        - containerPort: 80
+      securityContext:
+        runAsUser: 0             # Root - demo-sa'nın anyuid yetkisi sayesinde çalışır
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "100m"
+        limits:
+          memory: "128Mi"
+          cpu: "200m"

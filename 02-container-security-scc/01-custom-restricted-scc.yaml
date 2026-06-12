@@ -1,0 +1,44 @@
+# Custom SCC - Sadece NET_BIND_SERVICE izinli
+# Uygulama 443 portuna bind olmak için NET_BIND_SERVICE capability'sine ihtiyaç duyuyor.
+# restricted-v2'yi temel alır, sadece NET_BIND_SERVICE ekler.
+#
+# Çalıştır (cluster-admin gerektirir):
+#   oc apply -f 01-custom-restricted-scc.yaml
+#
+# Kontrol:
+#   oc get scc custom-restricted
+#   oc describe scc custom-restricted
+# ---------------------------------------------------------------
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: custom-restricted
+  annotations:
+    description: "restricted-v2 temel alır, sadece NET_BIND_SERVICE capability eklendi"
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+allowedCapabilities:
+  - NET_BIND_SERVICE              # Sadece bu capability'e izin ver
+defaultAddCapabilities: []
+requiredDropCapabilities:
+  - ALL                           # Diğer tüm capabilities kaldır
+runAsUser:
+  type: MustRunAsRange            # UID 0 (root) yasak
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+readOnlyRootFilesystem: false
+users: []
+groups: []

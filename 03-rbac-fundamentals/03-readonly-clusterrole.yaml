@@ -1,0 +1,56 @@
+# RBAC - Read-Only ClusterRole
+# Tüm cluster'da okuma yetkisi.
+# Monitoring araçları veya audit kullanıcıları için idealdir.
+#
+# Çalıştır (cluster-admin gerektirir):
+#   oc apply -f 03-readonly-clusterrole.yaml
+#
+# Kontrol:
+#   oc describe clusterrole cluster-reader-custom
+#   oc auth can-i get nodes --as monitoring-user              # yes (ClusterRoleBinding sonrası)
+#   oc auth can-i delete pods --as monitoring-user -n default # no
+#
+# NOT: OpenShift'te built-in 'view' ClusterRole da vardır.
+# Bu örnek daha kısıtlı ve özelleştirilmiş bir versiyondur.
+# ---------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-reader-custom
+  labels:
+    demo: rbac
+rules:
+  # Core kaynaklar (okuma)
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - configmaps
+      - namespaces
+      - nodes
+      - persistentvolumes
+      - endpoints
+    verbs: ["get", "list", "watch"]
+
+  # Apps kaynakları (okuma)
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+      - replicasets
+    verbs: ["get", "list", "watch"]
+
+  # Batch kaynakları (okuma)
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+
+  # Metrics (okuma)
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+
+  # NOT: secrets bu ClusterRole'de YOK - monitoring kullanıcısı secret göremez

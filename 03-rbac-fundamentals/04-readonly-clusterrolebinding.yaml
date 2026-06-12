@@ -1,0 +1,29 @@
+# RBAC - ClusterRoleBinding
+# monitoring-user'ı tüm cluster'da okuma yetkisine bağlar.
+#
+# Çalıştır:
+#   oc apply -f 04-readonly-clusterrolebinding.yaml
+#
+# Kontrol:
+#   oc auth can-i get nodes --as monitoring-user                # yes
+#   oc auth can-i get pods --as monitoring-user -n production   # yes
+#   oc auth can-i delete pods --as monitoring-user -n default   # no
+#   oc auth can-i get secrets --as monitoring-user -n default   # no
+# ---------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-reader-binding
+  labels:
+    demo: rbac
+subjects:
+  - kind: User
+    name: monitoring-user          # Grafana/Prometheus gibi araçların kullanıcısı
+    apiGroup: rbac.authorization.k8s.io
+  - kind: Group
+    name: monitoring-team          # Tüm monitoring ekibine aynı yetki
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-reader-custom      # 03-readonly-clusterrole.yaml'daki ClusterRole
+  apiGroup: rbac.authorization.k8s.io

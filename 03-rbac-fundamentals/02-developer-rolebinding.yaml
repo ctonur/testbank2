@@ -1,0 +1,31 @@
+# RBAC - Developer RoleBinding
+# developer1 kullanıcısını developer-role'e bağlar.
+# Sadece rbac-demo namespace'inde geçerli.
+#
+# Çalıştır:
+#   oc apply -f 02-developer-rolebinding.yaml
+#
+# Kontrol:
+#   oc auth can-i get pods --as developer1 -n rbac-demo          # yes
+#   oc auth can-i get secrets --as developer1 -n rbac-demo       # no
+#   oc auth can-i delete nodes --as developer1                   # no
+#   oc auth can-i get pods --as developer1 -n default            # no
+# ---------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developer-rolebinding
+  namespace: rbac-demo
+  labels:
+    demo: rbac
+subjects:
+  - kind: User
+    name: developer1           # OpenShift OAuth kullanıcısı
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: developer2           # Birden fazla kullanıcı eklenebilir
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: developer-role         # 01-developer-role.yaml'daki Role
+  apiGroup: rbac.authorization.k8s.io
